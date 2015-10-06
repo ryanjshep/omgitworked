@@ -6,11 +6,14 @@
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
 #include <GL/glx.h>
+extern "C" {
+    #include "fonts.h"
+}
 
 #define WINDOW_WIDTH  800
 #define WINDOW_HEIGHT 600
 
-#define MAX_PARTICLES 4000
+#define MAX_PARTICLES 10000
 #define GRAVITY 0.1
 
 //X Windows variables
@@ -36,12 +39,15 @@ struct Particle {
 };
 
 struct Game {
-    Shape box[5];
+    Shape box[15];
     Shape circle;
     Particle particle[MAX_PARTICLES];
     int n;
     int lastMousex, lastMousey;
 };
+
+
+int keys[65536];
 
 //Function prototypes
 void initXWindows(void);
@@ -51,7 +57,6 @@ void check_mouse(XEvent *e, Game *game);
 int check_keys(XEvent *e, Game *game);
 void movement(Game *game);
 void render(Game *game);
-
 
 int main(void)
 {
@@ -64,17 +69,82 @@ int main(void)
     game.n=0;
 
     //declare a box shape
+
+    //First
     game.box[0].width = 100;
-    game.box[0].height = 10;
-    game.box[0].center.x = 120 + 5*65;
-    game.box[0].center.y = 500 - 5*60;
+    game.box[0].height = 11;
+    game.box[0].center.x = 65;
+    game.box[0].center.y = 456;
+    //Second
     game.box[1].width = 100;
-    game.box[1].height = 10;
-    game.box[1].center.x = 120 + 5*65 + 50;
-    game.box[1].center.y = 500 - 5*60 - 30;
-    game.circle.center.x = 600;
-    game.circle.center.y = 50;
-    game.circle.radius = 100;
+    game.box[1].height = 11; 
+    game.box[1].center.x = 175;
+    game.box[1].center.y = 385;
+    //Third
+    game.box[2].width = 100;
+    game.box[2].height = 11; 
+    game.box[2].center.x = 285;
+    game.box[2].center.y = 305;
+    //Fourth
+    game.box[3].width = 100;
+    game.box[3].height = 11;  
+    game.box[3].center.x = 385;
+    game.box[3].center.y = 215;
+    //Fifth 
+    game.box[4].width = 100;
+    game.box[4].height = 11; 
+    game.box[4].center.x = 485;
+    game.box[4].center.y = 155;
+    //Source  (Sixth)
+    game.box[5].width = 75;
+    game.box[5].height = 15; 
+    game.box[5].center.x = 0;
+    game.box[5].center.y = 600;
+    //Source 2 (Seventh)
+    game.box[6].width = 70;
+    game.box[6].height = 60; 
+    game.box[6].center.x = 5;
+    game.box[6].center.y = 515;
+    //LS-Glasses (Eighth)
+    game.box[7].width = 40;
+    game.box[7].height = 20; 
+    game.box[7].center.x = 650;
+    game.box[7].center.y = 554;
+    //Mid-Glasses (Ninth)
+    game.box[8].width = 50;
+    game.box[8].height = 8; 
+    game.box[8].center.x = 740;
+    game.box[8].center.y = 554;
+    //RS-Glasses (Tenth)
+    game.box[9].width = 40;
+    game.box[9].height = 20; 
+    game.box[9].center.x = 755;
+    game.box[9].center.y = 554;
+    //LS-Glasses Edge (Eleventh)
+    game.box[10].width = 18;
+    game.box[10].height = 8; 
+    game.box[10].center.x = 593;
+    game.box[10].center.y = 565;
+    //RS-Glasses Edge (Twelfth)
+    game.box[11].width = 18;
+    game.box[11].height = 8; 
+    game.box[11].center.x = 760;
+    game.box[11].center.y = 565;
+    
+
+
+
+
+
+    game.circle.center.x = 720;
+    game.circle.center.y = 546;
+    game.circle.radius = 142;
+
+    //SET WATER AT (1,580)
+    
+    //game.circle[1].center.x = ;
+    //game.circle[1].center.y = ;
+    //game.corcle[1].radius = 90;
     
 
     //start animation
@@ -84,12 +154,14 @@ int main(void)
             XNextEvent(dpy, &e);
             check_mouse(&e, &game);
             done = check_keys(&e, &game);
+	    
         }
         movement(&game);
         render(&game);
         glXSwapBuffers(dpy, win);
     }
     cleanupXWindows();
+    cleanup_fonts();
     return 0;
 }
 
@@ -97,7 +169,7 @@ void set_title(void)
 {
     //Set the window title bar.
     XMapWindow(dpy, win);
-    XStoreName(dpy, win, "335 Lab1   LMB for particle");
+    XStoreName(dpy, win, "CS335 Lab1 - Sunny Day ");
 }
 
 void cleanupXWindows(void) {
@@ -145,7 +217,10 @@ void init_opengl(void)
     //Set 2D mode (no perspective)
     glOrtho(0, WINDOW_WIDTH, 0, WINDOW_HEIGHT, -1, 1);
     //Set the screen background color
-    glClearColor(0.1, 0.1, 0.1, 1.0);
+    glClearColor(0.4, 0.7, 0.7, 0.4);
+    //Allow Fonts
+    glEnable(GL_TEXTURE_2D);
+    initialize_fonts();
 }
 
 #define rnd() (float)rand() / (float)RAND_MAX
@@ -153,7 +228,7 @@ void init_opengl(void)
 void makeParticle(Game *game, int x, int y) {
     if (game->n >= MAX_PARTICLES)
         return;
-    std::cout << "makeParticle() " << x << " " << y << std::endl;
+    //std::cout << "makeParticle() " << x << " " << y << std::endl;
     //position of particle
     Particle *p = &game->particle[game->n];
     p->s.center.x = x;
@@ -165,8 +240,8 @@ void makeParticle(Game *game, int x, int y) {
 
 void check_mouse(XEvent *e, Game *game)
 {
-    static int savex = 0;
-    static int savey = 0;
+    static int savex = 1;
+    static int savey = 580;
     //static int n = 0;
 
     if (e->type == ButtonRelease) {
@@ -176,6 +251,7 @@ void check_mouse(XEvent *e, Game *game)
         if (e->xbutton.button==1) {
             //Left button was pressed
             int y = WINDOW_HEIGHT - e->xbutton.y;
+	std::cout << " " << e->xbutton.x << "  " << y << std::endl;
             for (int i=0; i<10; i++)
                 makeParticle(game, e->xbutton.x, y);
             return;
@@ -190,8 +266,9 @@ void check_mouse(XEvent *e, Game *game)
         savex = e->xbutton.x;
         savey = e->xbutton.y;
         int y = WINDOW_HEIGHT - e->xbutton.y;
-        for (int i=0; i<10; i++)
-            makeParticle(game, e->xbutton.x, y);
+	std::cout << " " << savex << "  " << savey << std::endl;
+        //for (int i=0; i<10; i++)
+            //makeParticle(game, e->xbutton.x, y);
         //if (++n < 10)
         //  return;
         game->lastMousex = e->xbutton.x;
@@ -202,14 +279,37 @@ void check_mouse(XEvent *e, Game *game)
 int check_keys(XEvent *e, Game *game)
 {
     //Was there input from the keyboard?
-    if (e->type == KeyPress) {
+        static int water = 0;
         int key = XLookupKeysym(&e->xkey, 0);
-        if (key == XK_Escape) {
-            return 1;
-        }
-        //You may check other keys here.
 
-    }
+	if(e->type == KeyPress){
+	    if(key == XK_b)
+	    std::cout << "Water: On" << std::endl;
+	    water = 1;
+	}
+	if(e->type == KeyRelease){
+	    if(key == XK_b)
+		std::cout << "Water: Off" << std::endl;
+		water = 0;
+	}
+	      if(water){
+	  	makeParticle(game, 1, 580);
+	  	makeParticle(game, 1, 579);
+	  	makeParticle(game, 1, 578);
+		makeParticle(game, 602, 557);
+		makeParticle(game, 598, 553);
+		makeParticle(game, 605, 531);
+		makeParticle(game, 655, 547);
+		makeParticle(game, 675, 524);
+		makeParticle(game, 685, 490);
+		makeParticle(game, 674, 587);
+		makeParticle(game, 700, 490);
+		makeParticle(game, 654, 486);
+		makeParticle(game, 737, 474);
+		makeParticle(game, 722, 485);
+	      }
+
+
     return 0;
 }
 
@@ -223,14 +323,14 @@ void movement(Game *game)
     for (int i=0; i<10; i++)
         makeParticle(game, game->lastMousex, game->lastMousey);
 
-    for (int i=0; i<game->n; i++) {
+    for (int i=0; i<game->n; i++){
         p = &game->particle[i];
         p->s.center.x += p->velocity.x;
         p->s.center.y += p->velocity.y;
         p->velocity.y -= GRAVITY;
 
         //check for collision with shapes...
-        for (int j=0; j<2; j++) {
+        for (int j=0; j<10; j++) {
             Shape *s = &game->box[j];
             if (p->s.center.y < s->center.y + s->height &&
                     p->s.center.y > s->center.y - s->height &&
@@ -239,7 +339,6 @@ void movement(Game *game)
                 p->velocity.y *= -0.25;
                 p->s.center.y = s->center.y + s->height + 0.01;
             }
-        }
         //check circle collision
         float d0,d1,dist;
         d0 = p->s.center.x - game->circle.center.x;
@@ -256,11 +355,12 @@ void movement(Game *game)
             p->s.center.y = game->circle.center.y + d1;
             p->velocity.x += d0 * 0.02;
             p->velocity.y += d1 * 0.02;
-        }
+	  }
+	}
 
         //check for off-screen
         if (p->s.center.y < 0.0 || p->s.center.y > WINDOW_HEIGHT) {
-            //std::cout << "off screen" << std::endl;
+            std::cout << " " << std::endl;
             memcpy(&game->particle[i], &game->particle[game->n-1],
                     sizeof(Particle));
             game->n--;
@@ -271,7 +371,30 @@ void movement(Game *game)
 void render(Game *game)
 {
     float w, h;
+    Rect r;
     glClear(GL_COLOR_BUFFER_BIT);
+   
+    //The Text Section
+    for(int i = 0; i<5; i++){
+	r.bot = game->box[i].center.y;
+        r.left = game->box[i].center.y;
+	r.right = game->box[i].center.x;
+	r.center = 0.25;	
+	r.centery = game->box[i].center.y;
+	r.centerx = game->box[i].center.x;
+	r.width = game->box[i].width;
+	r.height = game->box[i].height;
+    }
+
+    unsigned int cref = 0x00FFFFCC;
+    ggprint8b(&r, 25, cref, "Requirements");
+    ggprint8b(&r, 25, cref, "Design");
+    ggprint8b(&r, 25, cref, "Coding");
+    ggprint8b(&r, 25, cref, "Testing");
+    ggprint8b(&r, 25, cref, "Maintenance");
+
+    
+
     //Draw shapes...
 
     static int firsttime=1;
@@ -281,28 +404,33 @@ void render(Game *game)
         float angle = 0.0;
         float inc = (3.14159 * 2.0) / (float)n;
         for (int i=0; i<n; i++) {
-            verts[i][0] = cos(angle) * game->circle.radius + game->circle.center.x;     
-            verts[i][1] = sin(angle) * game->circle.radius + game->circle.center.y;     
+            verts[i][0] = cos(angle) * game->circle.radius 
+		          + game->circle.center.x;
+            verts[i][1] = sin(angle) * game->circle.radius 
+		          + game->circle.center.y;     
             angle += inc;
         }
-        firsttime=0;
+	firsttime = 0;
     }
 
-
-    glColor3ub(200,10,20);
+    glColor3ub(200,250,10);
     glPushMatrix();
     glBegin(GL_TRIANGLE_FAN);
-        for (int i=0; i<n; i++)
+        for (int i=0; i<n; i++){
             glVertex2i(verts[i][0], verts[i][1]);
+	}
     glEnd();
     glPopMatrix();
+     
+
+
 
 
 
     //draw box
     Shape *s;
-    glColor3ub(90,140,90);
-    for (int j=0; j<2; j++) {
+    glColor3ub(0, 0,0);
+    for (int j=0; j<15; j++) {
         s = &game->box[j];
         glPushMatrix();
         glTranslatef(s->center.x, s->center.y, s->center.z);
@@ -319,10 +447,10 @@ void render(Game *game)
     //draw all particles here
     for (int i=0; i<game->n; i++) {
         glPushMatrix();
-        glColor3ub(150,160,220);
+        glColor3ub(100,100,250);
         Vec *c = &game->particle[i].s.center;
-        w = 2;
-        h = 2;
+        w = 1;
+        h = 2.5;
         glBegin(GL_QUADS);
         glVertex2i(c->x-w, c->y-h);
         glVertex2i(c->x-w, c->y+h);
@@ -330,6 +458,5 @@ void render(Game *game)
         glVertex2i(c->x+w, c->y-h);
         glEnd();
         glPopMatrix();
-    }
+    }  
 }
-
