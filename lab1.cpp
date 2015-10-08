@@ -48,6 +48,7 @@ struct Game {
 
 
 int keys[65536];
+int yres = 300, xres = 500;
 
 //Function prototypes
 void initXWindows(void);
@@ -373,28 +374,8 @@ void render(Game *game)
     float w, h;
     Rect r;
     glClear(GL_COLOR_BUFFER_BIT);
+    unsigned int cref = 0x00FFFFF00;
    
-    //The Text Section
-    for(int i = 0; i<5; i++){
-	r.bot = game->box[i].center.y;
-        r.left = game->box[i].center.y;
-	r.right = game->box[i].center.x;
-	r.center = 0.25;	
-	r.centery = game->box[i].center.y;
-	r.centerx = game->box[i].center.x;
-	r.width = game->box[i].width;
-	r.height = game->box[i].height;
-    }
-
-    unsigned int cref = 0x00FFFFCC;
-    ggprint8b(&r, 25, cref, "Requirements");
-    ggprint8b(&r, 25, cref, "Design");
-    ggprint8b(&r, 25, cref, "Coding");
-    ggprint8b(&r, 25, cref, "Testing");
-    ggprint8b(&r, 25, cref, "Maintenance");
-
-    
-
     //Draw shapes...
 
     static int firsttime=1;
@@ -429,7 +410,7 @@ void render(Game *game)
 
     //draw box
     Shape *s;
-    glColor3ub(0, 0,0);
+    glColor3ub(0, 0, 0);
     for (int j=0; j<15; j++) {
         s = &game->box[j];
         glPushMatrix();
@@ -458,5 +439,33 @@ void render(Game *game)
         glVertex2i(c->x+w, c->y-h);
         glEnd();
         glPopMatrix();
-    }  
+    }
+
+  //The Text Section
+    r.bot = yres + 145;
+    r.left = 15;
+    r.center = 0;
+    ggprint8b(&r, 25, cref, "Requirements");
+    
+    r.bot = yres + 75;
+    r.left = 100;
+    r.center = 0;
+    ggprint8b(&r, 25, cref, "Design");
+
+    r.bot = yres -5;
+    r.left = 225;
+    r.center = 0;
+    ggprint8b(&r, 25, cref, "Coding");
+    
+    r.bot = yres - 95;
+    r.left = 300;
+    r.center = 0;
+    ggprint8b(&r, 25, cref, "Testing");
+
+    r.bot = yres - 155;
+    r.center = 0;
+    r.left = 400;
+    ggprint8b(&r, 25, cref, "Maintenance");
+
+  
 }
